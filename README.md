@@ -22,13 +22,13 @@ Package the reusable JAR:
 mvn clean package
 ```
 
-The artifact is written to `target/dwdash-1.0.0-SNAPSHOT-dw-library.jar`. To consume a local build from another Maven project, first run `mvn install`, then add:
+The artifact is written to `target/dwdash-0.1.0-SNAPSHOT-dw-library.jar`. To consume a local build from another Maven project, first run `mvn install`, then add:
 
 ```xml
 <dependency>
   <groupId>org.askme</groupId>
   <artifactId>dwdash</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -139,8 +139,8 @@ Tests live in `src/test/dw/*Test.dwl` and cover every public function, recursion
 The GitHub Actions workflow runs the same tests on every push to `main` and on pull requests targeting `main`. Successful main builds upload the packaged library as a workflow artifact. To create a reusable GitHub Release, push a semantic-version tag:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v0.1.0
+git push origin v0.1.0
 ```
 
-The workflow tests the tagged commit, sets the Maven artifact version from the tag (for example, `v1.0.0` becomes `1.0.0`), packages the library, and attaches the versioned JAR to the GitHub Release.
+The workflow tests the tagged commit, sets the Maven artifact version from the tag (for example, `v0.1.0` becomes `0.1.0`), packages the library, and attaches the versioned JAR to the GitHub Release.

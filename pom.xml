@@ -10,7 +10,7 @@
     <!-- NOTE: Remember to add your Anypoint Platform credentials in ~/.m2/settings.xml file -->
     <groupId>org.askme</groupId>
     <artifactId>dwdash</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>dw-library</packaging>
     <name>dwdash</name>
 
