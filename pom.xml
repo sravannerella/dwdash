@@ -8,11 +8,36 @@
     <!-- You can find more reference at https://docs.mulesoft.com/exchange/to-publish-assets-maven#publish-an-asset-to-exchange-using-maven -->
     <!-- <groupId>ORGANIZATION_ID</groupId> -->
     <!-- NOTE: Remember to add your Anypoint Platform credentials in ~/.m2/settings.xml file -->
-    <groupId>org.askme</groupId>
+    <groupId>io.github.sravannerella</groupId>
     <artifactId>dwdash</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.1-SNAPSHOT</version>
     <packaging>dw-library</packaging>
     <name>dwdash</name>
+    <description>Reusable DataWeave utilities for object manipulation, normalization, and sensitive-data masking.</description>
+    <url>https://github.com/sravannerella/dwdash</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>sravannerella</id>
+            <name>Sravan Nerella</name>
+            <url>https://github.com/sravannerella</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/sravannerella/dwdash.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/sravannerella/dwdash.git</developerConnection>
+        <url>https://github.com/sravannerella/dwdash/tree/main</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <properties>
         <data.weave.version>2.9.0</data.weave.version>
@@ -114,14 +139,84 @@
         </plugins>
     </build>
 
-    <!-- Publish release artifacts to this repository's GitHub Packages Maven registry. -->
-    <distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/sravannerella/dwdash</url>
-        </repository>
-    </distributionManagement>
+    <profiles>
+        <profile>
+            <id>central</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.mule.tools.maven</groupId>
+                        <artifactId>exchange-mule-maven-plugin</artifactId>
+                        <version>0.0.16</version>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.4.2</version>
+                        <executions>
+                            <execution>
+                                <id>attach-dataweave-sources</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>sources</classifier>
+                                    <classesDirectory>${project.basedir}/src/main/dw</classesDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>attach-dataweave-documentation</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <classifier>javadoc</classifier>
+                                    <classesDirectory>${project.build.directory}/data-weave-docs</classesDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.8</version>
+                        <executions>
+                            <execution>
+                                <id>sign-central-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.12.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central</publishingServerId>
+                            <!-- The DataWeave classifier needs a corrected signature name;
+                                 the workflow uploads the resulting corrected bundle via the Portal API. -->
+                            <skipUpload>true</skipUpload>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
     <repositories>
         <!-- Add Exchange repository to consume DataWeave library from Exchange -->
         <!-- You can find more reference at https://docs.mulesoft.com/exchange/to-publish-assets-maven#consume-an-exchange-asset-with-maven -->

@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: Existing release version to publish to GitHub Packages (for example, 0.1.0)
+        description: Existing release version to publish to Maven Central (for example, 0.1.1)
         required: false
         type: string
 
@@ -49,7 +49,6 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-      packages: write
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -60,9 +59,6 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-          server-id: github
-          server-username-env-var: GITHUB_ACTOR
-          server-password-env-var: GITHUB_TOKEN
 
       - name: Set release version
         if: startsWith(github.ref, 'refs/tags/v') || inputs.release_version != ''
@@ -86,12 +82,53 @@ jobs:
           path: target/*.jar
           if-no-files-found: error
 
-      - name: Publish to GitHub Packages
-        if: startsWith(github.ref, 'refs/tags/v') || inputs.release_version != ''
+
+  publish-central:
+    name: Publish to Maven Central
+    if: startsWith(github.ref, 'refs/tags/v') || inputs.release_version != ''
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Set up Java, Maven Central, and GPG
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase-env-var: GPG_PASSPHRASE
+
+      - name: Set release version
+        id: release-version
         env:
-          GITHUB_ACTOR: ${{ github.actor }}
-          GITHUB_TOKEN: ${{ github.token }}
-        run: mvn --batch-mode --no-transfer-progress -DskipTests deploy
+          RELEASE_VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.release_version }}
+        run: |
+          version="${RELEASE_VERSION#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release version: $version" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          mvn --batch-mode --no-transfer-progress org.codehaus.mojo:versions-maven-plugin:2.20.1:set -DnewVersion="$version" -DgenerateBackupPoms=false
+
+      - name: Build signed Maven Central bundle
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: mvn --batch-mode --no-transfer-progress -Pcentral -DskipTests -DskipDeployDocs=true deploy
+
+      - name: Correct DataWeave classifier signature
+        run: scripts/build-central-bundle.sh "${{ steps.release-version.outputs.version }}"
+
+      - name: Publish bundle to Maven Central
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
+        run: scripts/publish-central.sh target/central-publishing/central-bundle.zip "dwdash ${{ steps.release-version.outputs.version }}"
 
   release:
     name: Create GitHub Release

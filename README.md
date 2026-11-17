@@ -22,13 +22,13 @@ Package the reusable JAR:
 mvn clean package
 ```
 
-The artifact is written to `target/dwdash-0.1.0-SNAPSHOT-dw-library.jar`. To consume a local build from another Maven project, first run `mvn install`, then add:
+The artifact is written to `target/dwdash-0.1.1-SNAPSHOT-dw-library.jar`. To consume a local build from another Maven project, first run `mvn install`, then add:
 
 ```xml
 <dependency>
-  <groupId>org.askme</groupId>
+  <groupId>io.github.sravannerella</groupId>
   <artifactId>dwdash</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.1-SNAPSHOT</version>
   <classifier>dw-library</classifier>
 </dependency>
 ```
@@ -140,54 +140,35 @@ Tests live in `src/test/dw/*Test.dwl` and cover every public function, recursion
 The GitHub Actions workflow runs the same tests on every push to `main` and on pull requests targeting `main`. Successful main builds upload the packaged library as a workflow artifact. To create a reusable GitHub Release, push a semantic-version tag:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
-The workflow tests the tagged commit, sets the Maven artifact version from the tag (for example, `v0.1.0` becomes `0.1.0`), packages the library, and attaches the versioned JAR to the GitHub Release.
+The workflow tests the tagged commit, sets the Maven artifact version from the tag (for example, `v0.1.1` becomes `0.1.1`), packages the library, publishes signed artifacts to Maven Central, and attaches the versioned JAR to the GitHub Release.
 
-## Consume from GitHub Packages
+## Consume from Maven Central
 
-Released versions are also published as Maven packages at `https://maven.pkg.github.com/sravannerella/dwdash` using these coordinates:
+Released versions use these coordinates:
 
 ```text
-org.askme:dwdash:0.1.0
+io.github.sravannerella:dwdash:0.1.1
 ```
 
-GitHub requires authentication when downloading Maven packages, including public packages. Create a classic personal access token with `read:packages`, then add a matching server to `~/.m2/settings.xml`:
+Maven Central is Maven's default repository, so consumers need no repository declaration or credentials. Add only the dependency:
 
 ```xml
-<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
-          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-  <servers>
-    <server>
-      <id>github</id>
-      <username>YOUR_GITHUB_USERNAME</username>
-      <password>YOUR_GITHUB_TOKEN</password>
-    </server>
-  </servers>
-</settings>
-```
-
-Add the registry and dependency to the consuming project's `pom.xml`:
-
-```xml
-<repositories>
-  <repository>
-    <id>github</id>
-    <url>https://maven.pkg.github.com/sravannerella/dwdash</url>
-  </repository>
-</repositories>
-
 <dependencies>
   <dependency>
-    <groupId>org.askme</groupId>
+    <groupId>io.github.sravannerella</groupId>
     <artifactId>dwdash</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <classifier>dw-library</classifier>
   </dependency>
 </dependencies>
 ```
 
-Every future `v*` tag publishes the package after tests pass. The workflow can also republish an existing release version through **Run workflow** by supplying `release_version`.
+Every future `v*` tag publishes the signed package after tests pass. The publishing job requires `CENTRAL_USERNAME`, `CENTRAL_PASSWORD`, `GPG_PRIVATE_KEY`, and `GPG_PASSPHRASE` repository secrets. The workflow can also publish an existing version through **Run workflow** by supplying `release_version`.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).
