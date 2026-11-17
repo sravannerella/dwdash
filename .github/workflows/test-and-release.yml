@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: Existing release version to publish to GitHub Packages (for example, 0.1.0)
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -42,6 +47,9 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: test
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Check out source
         uses: actions/checkout@v7
@@ -52,12 +60,21 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
+          server-id: github
+          server-username-env-var: GITHUB_ACTOR
+          server-password-env-var: GITHUB_TOKEN
 
-      - name: Set release version from tag
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Set release version
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release_version != ''
         env:
-          RELEASE_VERSION: ${{ github.ref_name }}
-        run: mvn --batch-mode --no-transfer-progress org.codehaus.mojo:versions-maven-plugin:2.20.1:set -DnewVersion="${RELEASE_VERSION#v}" -DgenerateBackupPoms=false
+          RELEASE_VERSION: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || inputs.release_version }}
+        run: |
+          version="${RELEASE_VERSION#v}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid release version: $version" >&2
+            exit 1
+          fi
+          mvn --batch-mode --no-transfer-progress org.codehaus.mojo:versions-maven-plugin:2.20.1:set -DnewVersion="$version" -DgenerateBackupPoms=false
 
       - name: Package library
         run: mvn --batch-mode --no-transfer-progress -DskipTests package
@@ -68,6 +85,13 @@ jobs:
           name: dwdash-library
           path: target/*.jar
           if-no-files-found: error
+
+      - name: Publish to GitHub Packages
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.release_version != ''
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: mvn --batch-mode --no-transfer-progress -DskipTests deploy
 
   release:
     name: Create GitHub Release

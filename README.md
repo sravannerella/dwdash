@@ -29,6 +29,7 @@ The artifact is written to `target/dwdash-0.1.0-SNAPSHOT-dw-library.jar`. To con
   <groupId>org.askme</groupId>
   <artifactId>dwdash</artifactId>
   <version>0.1.0-SNAPSHOT</version>
+  <classifier>dw-library</classifier>
 </dependency>
 ```
 
@@ -144,3 +145,49 @@ git push origin v0.1.0
 ```
 
 The workflow tests the tagged commit, sets the Maven artifact version from the tag (for example, `v0.1.0` becomes `0.1.0`), packages the library, and attaches the versioned JAR to the GitHub Release.
+
+## Consume from GitHub Packages
+
+Released versions are also published as Maven packages at `https://maven.pkg.github.com/sravannerella/dwdash` using these coordinates:
+
+```text
+org.askme:dwdash:0.1.0
+```
+
+GitHub requires authentication when downloading Maven packages, including public packages. Create a classic personal access token with `read:packages`, then add a matching server to `~/.m2/settings.xml`:
+
+```xml
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <servers>
+    <server>
+      <id>github</id>
+      <username>YOUR_GITHUB_USERNAME</username>
+      <password>YOUR_GITHUB_TOKEN</password>
+    </server>
+  </servers>
+</settings>
+```
+
+Add the registry and dependency to the consuming project's `pom.xml`:
+
+```xml
+<repositories>
+  <repository>
+    <id>github</id>
+    <url>https://maven.pkg.github.com/sravannerella/dwdash</url>
+  </repository>
+</repositories>
+
+<dependencies>
+  <dependency>
+    <groupId>org.askme</groupId>
+    <artifactId>dwdash</artifactId>
+    <version>0.1.0</version>
+    <classifier>dw-library</classifier>
+  </dependency>
+</dependencies>
+```
+
+Every future `v*` tag publishes the package after tests pass. The workflow can also republish an existing release version through **Run workflow** by supplying `release_version`.

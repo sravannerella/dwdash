@@ -114,18 +114,14 @@
         </plugins>
     </build>
 
-    <!-- Add Exchange repository to publish your DataWeave library to Exchange -->
-    <!-- You can find more reference at https://docs.mulesoft.com/exchange/to-publish-assets-maven#publish-an-asset-to-exchange-using-maven -->
-    <!-- 
+    <!-- Publish release artifacts to this repository's GitHub Packages Maven registry. -->
     <distributionManagement>
         <repository>
-            <id>exchange</id>
-            <name>Exchange Repository</name>
-            <url>https://maven.anypoint.mulesoft.com/api/v3/organizations/ORGANIZATION_ID/maven</url>
-            <layout>default</layout>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/sravannerella/dwdash</url>
         </repository>
     </distributionManagement>
-    -->
     <repositories>
         <!-- Add Exchange repository to consume DataWeave library from Exchange -->
         <!-- You can find more reference at https://docs.mulesoft.com/exchange/to-publish-assets-maven#consume-an-exchange-asset-with-maven -->
